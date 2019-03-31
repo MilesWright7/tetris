@@ -16,17 +16,20 @@
 		this.walls = [];
 		this.wallColor = new Image();
 		this.wallColor.src = 'images/blackblock.png';
-		this.upcoming = [[11,0], [12,0], [13,0], [14,0], [15,0], [16,0], [16,1], [16,2], [16,3], [16,4], [16,5], [16,6], [15,6], [14,6], [13,6], [12,6], [11,6]];
+		this.upcomingBox = [[11,0], [12,0], [13,0], [14,0], [15,0], [16,0], [16,1], [16,2], [16,3], [16,4], [16,5], [16,6], [15,6], [14,6], [13,6], [12,6], [11,6]];
 		this.upcomingColor = new Image();
 		this.upcomingColor.src = 'images/blackline.png';
 		this.moving = false;
 		this.mvctr = 0;
 		this.fallrate = 16;
+		this.maxfallrate = 1;
 		this.rotatectr = 0;
 		this.linesCleared = 0;
 		this.level = 1;
 		this.score = 0;
 		this.clearThese = [];
+		this.deathScreen = new Image();
+		this.deathScreen.src = "images/Defeat-1.png";
 
 
 
@@ -51,7 +54,7 @@
 				c.ctx.fillText("Score:", this.gridSize*(12+shifter), this.gridSize*15.5);
 				c.ctx.fillText(this.score, this.gridSize*(13+shifter), this.gridSize*16.5);
 				//c.ctx.fillStyle = 'brown';
-				for(let point of this.upcoming){
+				for(let point of this.upcomingBox){
 					//c.ctx.fillRect(this.gridSize*(point[0]+shifter), this.gridSize*(point[1]+2), this.gridSize-1, this.gridSize-1);
 					if((point[1] == 0 || point[1] == 6) && !(point[0] == 16)){
 						c.ctx.drawImage(this.upcomingColor, 0,0,24,24,this.gridSize*(point[0]+shifter), this.gridSize*(point[1]+2),24,24);
@@ -78,13 +81,34 @@
 				}
 			}
 			if(this.state === 'end'){
-				game = new Game();
-				game.state = 'menu';
+				c.ctx.fillStyle = 'red';
+				c.ctx.font = '140px serif';
+				c.ctx.drawImage(this.deathScreen, 0, 0, innerWidth, innerHeight);
+				c.ctx.fillText("Final Score", innerWidth/2 - 300, 150,innerWidth - 5);
+				c.ctx.fillText(this.score, (innerWidth/2) - 40, 500, innerWidth - 45);
+				c.ctx.fillStyle = 'blue';
+				c.ctx.font = '60px serif';
+				c.ctx.fillText("Press spacebar to try again.", innerWidth /2 - 303, 315, innerWidth - 5);
 			}
 			if(this.state == 'menu'){
 				this.updateLevel();
-			}
-		},
+				c.ctx.fillStyle = 'cornflowerblue';
+				c.ctx.fillRect(0, 0, innerWidth, innerHeight);
+				c.ctx.fillStyle = 'black';
+				c.ctx.font = '36px serif';
+				c.ctx.fillText("Use the arrow keys to move the pieces side to side.",5,50,innerWidth - 5);
+				c.ctx.fillText("Use Z to rotate pieces. Use X to start game.",5,100, innerWidth - 5);
+				c.ctx.fillText("Use M to toggle music.",5,150, innerWidth - 5);
+				c.ctx.fillText("Select starting level:",5, 200, innerWidth - 5);
+				for(let selector of selectArray){
+					selector.draw();
+				}
+				c.ctx.fillStyle = 'black';
+				c.ctx.fillText("Starting Level:", 10, 450, innerWidth - 5);
+				c.ctx.fillStyle = 'red';
+				c.ctx.fillText(this.level, 250, 450, innerWidth - 5);
+					}
+				},
 
 		update: function(){
 			if(this.walls.length < 10){
@@ -92,8 +116,9 @@
 			}
 			for(let point of this.board){
 				if(point[1] == 0){
-					this.endGame();
-				}
+					this.state = 'end';
+					audio.pause();
+					audio.src = 'audio/tetris-gameboy-death.mp3';				}
 			}
 			///keystuff ask Dylan///
 			if(Key.isDown(Key.RIGHT)){
@@ -118,12 +143,13 @@
 				}
 				this.mvctr++;
 			}
-//			else if(Key.isDown(Key.DOWN) && (counter % 4 == 0)){
-//				this.falling.movedown();
-//				if(this.shouldstop()){
-//					this.place();
-//				}
-//			}
+			else if(Key.isDown(Key.DOWN)){
+				this.fallrate = this.maxfallrate;
+				
+			}
+			else if(!Key.isDown(Key.DOWN)){
+				this.updateLevel();
+			}
 			else{
 				this.moving = false;
 			}
@@ -141,6 +167,7 @@
 			}
 			if(this.shouldstop() && (counter% this.fallrate == 0)){
 				this.place();
+				this.updateLevel();
 			}
 			else if(counter% this.fallrate == 0){
 				this.falling.movedown();
@@ -156,12 +183,12 @@
 				this.clearRow(this.clearThese);
 			}
 			counter++;
-			this.updateLevel();
+			
 
 		},
 
 		clearRow: function(rows){
-			console.log(rows.length);
+			
 			if(rows.length == 1){
 				this.score += 50*this.level;
 			}
@@ -763,7 +790,7 @@
 			this.next = new Shape();
 			this.next.establish();
 		},
-		updateLevel: function(a, b){
+		updateLevel: function(){
 			if(this.level > Math.floor(this.linesCleared/10)){
 				// ignore
 			}
@@ -818,10 +845,6 @@
 			else if(this.level == 16){
 				this.fallrate = 1;
 			}
-		},
-		endGame: function(){
-			this.state = 'end';
-
 		}
 	}
 
